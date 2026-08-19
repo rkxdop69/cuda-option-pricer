@@ -1,0 +1,35 @@
+# Build directories
+build/
+bin/
+out/
+.vs/
+x64/
+Release/
+Debug/
+
+# Compiled binary files
+*.exe
+*.dll
+*.so
+*.dylib
+*.obj
+*.o
+*.pdb
+*.ilk
+*.idb
+*.exp
+*.lib
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+env/
+venv/
+
+# Temporary files and logs
+*.log
+*.tlog
+.DS_Store
+Thumbs.db
