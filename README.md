@@ -46,14 +46,17 @@ $$
 $$
 
 ### 3. Least Squares Monte Carlo (LSM)
-For **American Options**, early exercise is permitted at any time. We determine the optimal exercise strategy using Longstaff-Schwartz LSM:
-- Simulate all price paths up to expiry $T$.
-- Moving backward in time (for each step $t$), we isolate paths that are "In-The-Money" (ITM).
-- We regress the discounted future payoffs $Y$ against the current stock price using quadratic basis functions $\{1, S, S^2\}$:
+For **American Options**, early exercise is permitted at any time. We determine the optimal exercise strategy using the Longstaff-Schwartz Least Squares Monte Carlo (LSM) algorithm:
 
- ($1, S, S^2$)
+1. **Simulate Paths**: Generate all price paths up to expiry $T$.
+2. **Identify ITM Paths**: Working backward in time at each step $t$, isolate paths that are "In-The-Money" (ITM).
+3. **Cross-Sectional Regression**: Regress the discounted future payoffs $Y$ against current stock prices $S$ using quadratic polynomial basis functions $(1, S, S^2)$:
 
-- If the immediate exercise payoff exceeds the estimated continuation value from the regression, we update the path's payoff to the exercise value.
+$$
+Y = a + bS + cS^2
+$$
+
+4. **Optimal Exercise Decision**: If the immediate exercise payoff exceeds the estimated continuation value ($\hat{Y} = a + bS + cS^2$), update the path payoff to the exercise value.
 
 ## GPU Acceleration Mechanics
 For **European Options**, the pricing uses an optimized single-step kernel leveraging:
@@ -64,8 +67,8 @@ For **European Options**, the pricing uses an optimized single-step kernel lever
 
 For **American Options**, we implement a **100% On-Device Least Squares Monte Carlo (LSM)** pipeline:
 - **Parallel Path Generation**: Simulates 400,000 multi-step paths directly in GPU VRAM using `Philox4`.
-- **Parallel Regression Sums**: Computes the 8 polynomial regression normal equations ($\sum 1, \sum X, \sum X^2, \dots$) across in-the-money paths via warp-shuffle reductions.
-- **On-Device Matrix Inversion**: Solves the $3 \times 3$ polynomial system in parallel and updates continuation payoffs without copying paths back to the CPU.
+- **Parallel Regression Sums**: Computes the 8 polynomial regression normal equations ($(\sum 1, \sum X, \sum X^2, \dots)$) across in-the-money paths via warp-shuffle reductions.
+- **On-Device Matrix Inversion**: Solves the $(3 \times 3)$ polynomial system in parallel and updates continuation payoffs without copying paths back to the CPU.
 - **Zero PCIe Round-trips**: All 252 backward induction steps execute asynchronously on the GPU.
 
 ## Performance Benchmark
