@@ -27,20 +27,34 @@ The application simulates theoretical prices for these options using geometric B
 
 ### 1. Geometric Brownian Motion (GBM)
 We simulate the future paths of the underlying asset $S_t$ using the risk-neutral GBM process:
-$$ S_t = S_0 \exp\left(\left(r - \frac{\sigma^2}{2}\right)t + \sigma \sqrt{t} Z\right) $$
+
+$$
+S_t = S_0 \exp\left(\left(r - \frac{\sigma^2}{2}\right)t + \sigma \sqrt{t} Z\right)
+$$
+
 Where $Z \sim \mathcal{N}(0,1)$ is drawn from a standard normal distribution via OpenMP local RNGs or `cuRAND`.
 
 ### 2. Finite Difference for Greeks (CRN)
 We compute the Greeks (Delta $\Delta$ and Gamma $\Gamma$) using Central Finite Differences paired with Common Random Numbers (CRN). CRN reduces variance by using the same standard normal $Z$ paths for the bumped prices:
-$$ \Delta = \frac{V(S_0 + dS) - V(S_0 - dS)}{2 dS} $$
-$$ \Gamma = \frac{V(S_0 + dS) - 2V(S_0) + V(S_0 - dS)}{(dS)^2} $$
+
+$$
+\Delta = \frac{V(S_0 + dS) - V(S_0 - dS)}{2\,dS}
+$$
+
+$$
+\Gamma = \frac{V(S_0 + dS) - 2V(S_0) + V(S_0 - dS)}{(dS)^2}
+$$
 
 ### 3. Least Squares Monte Carlo (LSM)
 For **American Options**, early exercise is permitted at any time. We determine the optimal exercise strategy using Longstaff-Schwartz LSM:
 - Simulate all price paths up to expiry $T$.
 - Moving backward in time (for each step $t$), we isolate paths that are "In-The-Money" (ITM).
-- We regress the discounted future payoffs $Y$ against the current stock price using basis functions ($1, S, S^2$):
-  $$ Y = a + bS + cS^2 $$
+- We regress the discounted future payoffs $Y$ against the current stock price using quadratic basis functions $\{1, S, S^2\}$:
+
+  $$
+  Y = a + bS + cS^2
+  $$
+
 - If the immediate exercise payoff exceeds the estimated continuation value from the regression, we update the path's payoff to the exercise value.
 
 ## GPU Acceleration Mechanics
@@ -58,7 +72,7 @@ For **American Options**, we implement a **100% On-Device Least Squares Monte Ca
 
 ## Performance Benchmark
 
-We simulate $N = 400,000$ paths (4x scale) for an American option with 252 steps, and for a single-step European option across four major tickers. We benchmark **At-The-Money (ATM)** options to verify high precision and statistical convergence.
+We simulate $N = 400{,}000$ paths (4x scale) for an American option with 252 steps, and for a single-step European option across four major tickers. We benchmark **At-The-Money (ATM)** options to verify high precision and statistical convergence.
 
 ### 1. SPY (Call Option, Strike: 770, Underlying: 769.60)
 **Market Mid-Price**: 13.015  |  **Implied Vol**: 13.37%
