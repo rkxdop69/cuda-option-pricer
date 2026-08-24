@@ -27,13 +27,14 @@ PricingResult CPUOptionEngine::priceEuropean(const OptionData& opt, int num_path
     real_t K = opt.strike;
     real_t T = opt.expiry_years;
     real_t r = opt.risk_free_rate;
+    real_t q = opt.dividend_yield;
     real_t v = opt.implied_volatility;
 
-    real_t dS = S * 0.01; // 1% bump for Greeks
+    real_t dS = S * 0.01f; // 1% bump for Greeks
     real_t S_up = S + dS;
     real_t S_dn = S - dS;
 
-    real_t drift = (r - 0.5f * v * v) * T;
+    real_t drift = (r - q - 0.5f * v * v) * T;
     real_t vol_sqrt_T = v * std::sqrt(T);
     real_t discount = std::exp(-r * T);
 
@@ -83,11 +84,12 @@ PricingResult CPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
     real_t K = opt.strike;
     real_t T = opt.expiry_years;
     real_t r = opt.risk_free_rate;
+    real_t q = opt.dividend_yield;
     real_t v = opt.implied_volatility;
 
     real_t dt = T / num_steps;
     real_t df = std::exp(-r * dt);
-    real_t drift = (r - 0.5f * v * v) * dt;
+    real_t drift = (r - q - 0.5f * v * v) * dt;
     real_t vol_sqrt_dt = v * std::sqrt(dt);
 
     real_t dS = S0 * 0.01f;

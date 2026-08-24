@@ -17,4 +17,5 @@ struct OptionData {
     real_t ask;
     real_t implied_volatility;
     real_t risk_free_rate;
+    real_t dividend_yield;
 };

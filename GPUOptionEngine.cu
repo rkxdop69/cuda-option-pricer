@@ -26,7 +26,7 @@ __device__ inline real_t d_payoff(real_t S, real_t K, OptionType type) {
 __global__ void europeanKernel(
     int num_paths,
     OptionType type,
-    real_t S, real_t K, real_t T, real_t r, real_t v,
+    real_t S, real_t K, real_t T, real_t r, real_t q, real_t v,
     real_t* d_results)
 {
     int tid = threadIdx.x;
@@ -40,7 +40,7 @@ __global__ void europeanKernel(
     real_t S_up = S + dS;
     real_t S_dn = S - dS;
 
-    real_t drift = (r - 0.5f * v * v) * T;
+    real_t drift = (r - q - 0.5f * v * v) * T;
     real_t vol_sqrt_T = v * sqrtf(T);
 
     real_t my_V = 0.0f, my_V_up = 0.0f, my_V_dn = 0.0f;
@@ -117,7 +117,7 @@ PricingResult GPUOptionEngine::priceEuropean(const OptionData& opt, int num_path
 
     europeanKernel<<<blocks, threads>>>(
         num_paths, opt.type, opt.underlying_price, opt.strike,
-        opt.expiry_years, opt.risk_free_rate, opt.implied_volatility,
+        opt.expiry_years, opt.risk_free_rate, opt.dividend_yield, opt.implied_volatility,
         d_results
     );
     CUDA_CHECK(cudaDeviceSynchronize());
@@ -143,7 +143,7 @@ PricingResult GPUOptionEngine::priceEuropean(const OptionData& opt, int num_path
 // Multi-step Path Generation with Philox4
 __global__ void americanGeneratePathsKernel(
     int num_paths, int num_steps,
-    real_t S, real_t r, real_t v, real_t dt,
+    real_t S, real_t r, real_t q, real_t v, real_t dt,
     unsigned long long seed,
     real_t* d_paths)
 {
@@ -152,7 +152,7 @@ __global__ void americanGeneratePathsKernel(
         curandStatePhilox4_32_10_t state;
         curand_init(seed, p, 0, &state);
 
-        real_t drift = (r - 0.5f * v * v) * dt;
+        real_t drift = (r - q - 0.5f * v * v) * dt;
         real_t vol_sqrt_dt = v * sqrtf(dt);
 
         real_t curr_S = S;
@@ -385,6 +385,7 @@ PricingResult GPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
     real_t K = opt.strike;
     real_t T = opt.expiry_years;
     real_t r = opt.risk_free_rate;
+    real_t q = opt.dividend_yield;
     real_t v = opt.implied_volatility;
 
     real_t dt = T / num_steps;
@@ -410,7 +411,7 @@ PricingResult GPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
     auto price_single_spot = [&](real_t spot, unsigned long long seed) -> real_t {
         // Step 1: Generate Paths on GPU
         americanGeneratePathsKernel<<<blocks, threads>>>(
-            num_paths, num_steps, spot, r, v, dt, seed, d_paths
+            num_paths, num_steps, spot, r, q, v, dt, seed, d_paths
         );
 
         // Step 2: Initialize Payoffs at Maturity

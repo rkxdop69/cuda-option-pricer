@@ -21,9 +21,15 @@ public:
             std::vector<real_t> asks = doc.GetColumn<real_t>("Ask");
             std::vector<real_t> ivs = doc.GetColumn<real_t>("Implied_Volatility");
             std::vector<real_t> rfrs = doc.GetColumn<real_t>("Risk_Free_Rate");
-
             size_t num_rows = doc.GetRowCount();
             data.reserve(num_rows);
+
+            std::vector<real_t> divs;
+            try {
+                divs = doc.GetColumn<real_t>("Dividend_Yield");
+            } catch (...) {
+                divs.assign(num_rows, 0.0f);
+            }
 
             for (size_t i = 0; i < num_rows; ++i) {
                 OptionData opt;
@@ -35,6 +41,7 @@ public:
                 opt.ask = asks[i];
                 opt.implied_volatility = ivs[i];
                 opt.risk_free_rate = rfrs[i];
+                opt.dividend_yield = (i < divs.size()) ? divs[i] : 0.0f;
                 data.push_back(opt);
             }
         } catch (const std::exception& e) {

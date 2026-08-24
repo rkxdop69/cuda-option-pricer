@@ -34,9 +34,10 @@ void run_benchmark_for_ticker(const std::string& ticker) {
     std::cout << "Type: " << (opt.type == OptionType::Call ? "Call" : "Put") << "\n";
     std::cout << "Strike: " << opt.strike << "\n";
     std::cout << "Underlying: " << opt.underlying_price << "\n";
-    std::cout << "Expiry: " << opt.expiry_years << " years\n";
     std::cout << "Market Mid-Price: " << (opt.bid + opt.ask) / 2.0f << "\n";
-    std::cout << "Implied Vol: " << opt.implied_volatility << "\n\n";
+    std::cout << "Implied Vol: " << opt.implied_volatility << "\n";
+    std::cout << "Risk-Free Rate: " << opt.risk_free_rate * 100.0f << "%\n";
+    std::cout << "Dividend Yield: " << opt.dividend_yield * 100.0f << "%\n\n";
 
     // ---------------------------------------------------------
     // European Pricing
