@@ -51,9 +51,7 @@ For **American Options**, early exercise is permitted at any time. We determine 
 - Moving backward in time (for each step $t$), we isolate paths that are "In-The-Money" (ITM).
 - We regress the discounted future payoffs $Y$ against the current stock price using quadratic basis functions $\{1, S, S^2\}$:
 
-  $$
-  Y = a + bS + cS^2
-  $$
+ ($1, S, S^2$)
 
 - If the immediate exercise payoff exceeds the estimated continuation value from the regression, we update the path's payoff to the exercise value.
 
