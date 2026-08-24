@@ -5,19 +5,21 @@
 #include <vector>
 #include <algorithm>
 
+using namespace std;
+
 namespace {
     // Generate standard normal
-    inline real_t generate_normal(std::mt19937& gen) {
-        std::normal_distribution<real_t> dist(0.0, 1.0);
+    inline real_t generate_normal(mt19937& gen) {
+        normal_distribution<real_t> dist(0.0, 1.0);
         return dist(gen);
     }
 
     // Payoff function
     inline real_t payoff(real_t S, real_t K, OptionType type) {
         if (type == OptionType::Call) {
-            return std::max<real_t>(S - K, 0.0);
+            return max<real_t>(S - K, 0.0);
         } else {
-            return std::max<real_t>(K - S, 0.0);
+            return max<real_t>(K - S, 0.0);
         }
     }
 }
@@ -35,21 +37,21 @@ PricingResult CPUOptionEngine::priceEuropean(const OptionData& opt, int num_path
     real_t S_dn = S - dS;
 
     real_t drift = (r - q - 0.5f * v * v) * T;
-    real_t vol_sqrt_T = v * std::sqrt(T);
-    real_t discount = std::exp(-r * T);
+    real_t vol_sqrt_T = v * sqrt(T);
+    real_t discount = exp(-r * T);
 
     real_t sum_V = 0.0, sum_V_up = 0.0, sum_V_dn = 0.0;
 
     #pragma omp parallel
     {
         // Thread-local random generator
-        std::mt19937 gen(42 + omp_get_thread_num());
+        mt19937 gen(42 + omp_get_thread_num());
         real_t local_V = 0, local_V_up = 0, local_V_dn = 0;
 
         #pragma omp for
         for (int i = 0; i < num_paths; ++i) {
             real_t Z = generate_normal(gen);
-            real_t exp_term = std::exp(drift + vol_sqrt_T * Z);
+            real_t exp_term = exp(drift + vol_sqrt_T * Z);
             
             real_t ST = S * exp_term;
             real_t ST_up = S_up * exp_term;
@@ -88,25 +90,25 @@ PricingResult CPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
     real_t v = opt.implied_volatility;
 
     real_t dt = T / num_steps;
-    real_t df = std::exp(-r * dt);
+    real_t df = exp(-r * dt);
     real_t drift = (r - q - 0.5f * v * v) * dt;
-    real_t vol_sqrt_dt = v * std::sqrt(dt);
+    real_t vol_sqrt_dt = v * sqrt(dt);
 
     real_t dS = S0 * 0.01f;
 
-    auto simulate_paths = [&](real_t init_S, std::vector<real_t>& V) -> real_t {
-        std::vector<real_t> paths((size_t)num_paths * (num_steps + 1));
+    auto simulate_paths = [&](real_t init_S, vector<real_t>& V) -> real_t {
+        vector<real_t> paths((size_t)num_paths * (num_steps + 1));
         
         #pragma omp parallel
         {
-            std::mt19937 gen(1234 + omp_get_thread_num());
+            mt19937 gen(1234 + omp_get_thread_num());
             #pragma omp for
             for (int p = 0; p < num_paths; ++p) {
                 real_t curr_S = init_S;
                 paths[p * (num_steps + 1)] = curr_S;
                 for (int s = 1; s <= num_steps; ++s) {
                     real_t Z = generate_normal(gen);
-                    curr_S *= std::exp(drift + vol_sqrt_dt * Z);
+                    curr_S *= exp(drift + vol_sqrt_dt * Z);
                     paths[p * (num_steps + 1) + s] = curr_S;
                 }
             }
@@ -149,7 +151,7 @@ PricingResult CPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
                 double m31 = sum_x2, m32 = sum_x3, m33 = sum_x4;
 
                 double det = m11*(m22*m33 - m23*m32) - m12*(m21*m33 - m23*m31) + m13*(m21*m32 - m22*m31);
-                if (std::abs(det) > 1e-10) {
+                if (abs(det) > 1e-10) {
                     double b1 = sum_y, b2 = sum_yx, b3 = sum_yx2;
                     a = (b1*(m22*m33 - m23*m32) - m12*(b2*m33 - m23*b3) + m13*(b2*m32 - m22*b3)) / det;
                     b = (m11*(b2*m33 - m23*b3) - b1*(m21*m33 - m23*m31) + m13*(m21*b3 - b2*m31)) / det;
@@ -182,7 +184,7 @@ PricingResult CPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
         return (real_t)((sum / num_paths) * df);
     };
 
-    std::vector<real_t> V_center, V_up, V_dn;
+    vector<real_t> V_center, V_up, V_dn;
     real_t price = simulate_paths(S0, V_center);
     real_t price_up = simulate_paths(S0 + dS, V_up);
     real_t price_dn = simulate_paths(S0 - dS, V_dn);

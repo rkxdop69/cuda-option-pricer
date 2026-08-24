@@ -4,11 +4,13 @@
 #include <cmath>
 #include <vector>
 
+using namespace std;
+
 #define CUDA_CHECK(call) \
     do { \
         cudaError_t err = call; \
         if (err != cudaSuccess) { \
-            std::cerr << "CUDA error at " << __FILE__ << ":" << __LINE__ << " code=" << err << " \"" << cudaGetErrorString(err) << "\"" << std::endl; \
+            cerr << "CUDA error at " << __FILE__ << ":" << __LINE__ << " code=" << err << " \"" << cudaGetErrorString(err) << "\"" << endl; \
             return PricingResult{0, 0, 0}; \
         } \
     } while(0)
@@ -126,7 +128,7 @@ PricingResult GPUOptionEngine::priceEuropean(const OptionData& opt, int num_path
     CUDA_CHECK(cudaMemcpy(h_results, d_results, 3 * sizeof(real_t), cudaMemcpyDeviceToHost));
     CUDA_CHECK(cudaFree(d_results));
 
-    real_t discount = std::exp(-opt.risk_free_rate * opt.expiry_years);
+    real_t discount = exp(-opt.risk_free_rate * opt.expiry_years);
     real_t dS = opt.underlying_price * 0.01f;
 
     PricingResult res;
@@ -389,7 +391,7 @@ PricingResult GPUOptionEngine::priceAmerican(const OptionData& opt, int num_path
     real_t v = opt.implied_volatility;
 
     real_t dt = T / num_steps;
-    real_t df = std::exp(-r * dt);
+    real_t df = exp(-r * dt);
     real_t dS = S0 * 0.01f;
 
     real_t* d_paths;

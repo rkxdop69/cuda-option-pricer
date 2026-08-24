@@ -8,23 +8,24 @@
 class CSVReader {
 public:
     static std::vector<OptionData> read(const std::string& filename) {
-        std::vector<OptionData> data;
+        using namespace std;
+        vector<OptionData> data;
         try {
             // Read CSV with row 0 as header labels (like pandas DataFrame)
             rapidcsv::Document doc(filename, rapidcsv::LabelParams(0, -1));
             
-            std::vector<std::string> types = doc.GetColumn<std::string>("Type");
-            std::vector<real_t> strikes = doc.GetColumn<real_t>("Strike");
-            std::vector<real_t> expiries = doc.GetColumn<real_t>("Expiry_Years");
-            std::vector<real_t> underlyings = doc.GetColumn<real_t>("Underlying_Price");
-            std::vector<real_t> bids = doc.GetColumn<real_t>("Bid");
-            std::vector<real_t> asks = doc.GetColumn<real_t>("Ask");
-            std::vector<real_t> ivs = doc.GetColumn<real_t>("Implied_Volatility");
-            std::vector<real_t> rfrs = doc.GetColumn<real_t>("Risk_Free_Rate");
+            vector<string> types = doc.GetColumn<string>("Type");
+            vector<real_t> strikes = doc.GetColumn<real_t>("Strike");
+            vector<real_t> expiries = doc.GetColumn<real_t>("Expiry_Years");
+            vector<real_t> underlyings = doc.GetColumn<real_t>("Underlying_Price");
+            vector<real_t> bids = doc.GetColumn<real_t>("Bid");
+            vector<real_t> asks = doc.GetColumn<real_t>("Ask");
+            vector<real_t> ivs = doc.GetColumn<real_t>("Implied_Volatility");
+            vector<real_t> rfrs = doc.GetColumn<real_t>("Risk_Free_Rate");
             size_t num_rows = doc.GetRowCount();
             data.reserve(num_rows);
 
-            std::vector<real_t> divs;
+            vector<real_t> divs;
             try {
                 divs = doc.GetColumn<real_t>("Dividend_Yield");
             } catch (...) {
@@ -44,8 +45,8 @@ public:
                 opt.dividend_yield = (i < divs.size()) ? divs[i] : 0.0f;
                 data.push_back(opt);
             }
-        } catch (const std::exception& e) {
-            std::cerr << "Error reading CSV file " << filename << ": " << e.what() << std::endl;
+        } catch (const exception& e) {
+            cerr << "Error reading CSV file " << filename << ": " << e.what() << endl;
         }
 
         return data;
